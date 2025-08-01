@@ -1,0 +1,288 @@
+{
+  "name": "GFX - Insight Wave",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/gfx/insight-wave",
+        "authentication": "basicAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        -360
+      ],
+      "id": "51aeb6b8-a2f3-438d-9b30-dea784625532",
+      "name": "Webhook",
+      "webhookId": "4f4831c8-abcd-4205-83ac-7e8b233ee9a3",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "WmmGlia9yJy9YjXk",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.prompt_contexto }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<AgentIntructions>\n  <Funcao>\n    <nome>InsightWave</nome>\n    <descricao>Assuma que você é um analista de tendência no ramo {{ $json.body.agent_ramo }}, com capacidade de entender o mercado atual e identificar tendências para propor aquisição de produtos para comercializar no varejo.</descricao>\n  </Funcao>\n  <Meta>\n    Realizar uma pesquisa de tendência de acordo com a solicitação do usuário para identificar as {{ $json.body.agent_qtde_tendencias }} maiores tendências considerando os últimos {{ $json.body.agent_qtde_dias }} dias. Nossa meta, como empresa de varejo é aumentar as vendas e também sair na frente da concorrência.\n  </Meta>\n  <Instrucoes>\n    <Instrucao>Passo 1: Forneça o resultado no formato de um objeto JSON em uma estrutura \"result\"</Instrucao>\n    <Instrucao>Passo 2: Coloque no resultado duas tabelas, sendo a primeira de tendências e a segunda dos produtos relacionaods</Instrucao>\n    <Instrucao>Passo 3: A primeira tabela de tendências deve conter o ranking, descrição e o motivo da classificação com no máximo 200 caracteres</Instrucao>\n    <Instrucao>Passo 4: Para a segunda tabela utilize a tool google sheets que contém uma lista de produtos, identificando quais destes produtos se enquadram nas tendências. A planilha deve possuir 3 colunas sendo a primeira o EAN, a descrição do produto e a terceira em qual ranking baseado na primeira tabela o produto se classifica</Instrucao>\n    <Instrucao>Passo 5: O objeto inteiro deve estar aninhado sob uma chave chamada \"result\".</Instrucao>\n    <Instrucao>Passo 6: Se não conseguir relacionar as tendências com os produtos gere o resultado sem a tabela de produtos, somente com as tendências</Instrucao>\n    <Instrucao>Passo 7: Coloque uma breve introdução e uma conclusão no resultado. Tanto introdução quanto conclusão devem ter no máximo 200 caracteres</Instrucao>\n    <Instrucao>Passo 8: O resultado deve ser todo fornecido em português</Instrucao>\n    <Instrucao>Passo 9: Não utilize os caracteres apóstofro e aspas simples no resultado. Também não use o caracter \"`\" e nem a palavra json no resultado</Instrucao>\n    <Instrucao>Passo 10: Se ocorrer qualquer erro gere um objeto no formato JSON contendo um único atributo chamado \"error\" e informe o motivo do erro com no máximo 150 caracteres</Instrucao>\n  </Instrucoes>\n</AgentIntructions>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        -360
+      ],
+      "id": "4c16a4d8-3b19-4b80-875a-31c06d253ab5",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        -120
+      ],
+      "id": "9b31ea5c-21e3-44f5-b330-4ce246a37bf9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ff140Mj9QfcS7tFk",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1ySIhmykymyZSx-nIX7Kcyrhnn2w9I77HEn9CR9E1328",
+          "mode": "list",
+          "cachedResultName": "produtos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ySIhmykymyZSx-nIX7Kcyrhnn2w9I77HEn9CR9E1328/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1749735715,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ySIhmykymyZSx-nIX7Kcyrhnn2w9I77HEn9CR9E1328/edit#gid=1749735715"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        -520,
+        -120
+      ],
+      "id": "ef398aaf-5f73-495f-8c47-fe1518479638",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleApi": {
+          "id": "uUN210BwTnsdD0fA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"result\": {\n    \"introducao\": \"Bla Bla\",\n    \"tendencias\": [\n      {\n        \"ranking\": \"1\",\n        \"descricao\": \"Descrição da tendência\",\n        \"motivo\": \"Motivo da tendência\"\n      }\n    ],\n    \"produtos\": [\n      {\n        \"ean\": \"\",\n        \"produto\": \"Descrição do produto\",\n        \"ranking\": \"1\"\n      }\n    ],\n    \"conclusao\": \"Conclusão\"\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        -120
+      ],
+      "id": "be8ec3d6-1c29-4c1d-828a-5d67346f99d4",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "35951546-82fe-45ef-bf7e-7a630876bb68",
+              "leftValue": "={{ $json.output.result }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "d926a335-0637-4c38-b866-7c9bef2dc808",
+              "leftValue": "={{ $json.output.result.introducao }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "99a5ecef-3344-437e-b8e1-5a8e38583b02",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        -360
+      ],
+      "id": "696fbfd5-6714-4164-8b6c-1232ac2e1e97",
+      "name": "Success"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        160,
+        -560
+      ],
+      "id": "4ac54eff-4649-44d2-ba62-0bf34b0beb91",
+      "name": "Success response"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        160,
+        -220
+      ],
+      "id": "3d7f8f12-44cd-49c0-9a9b-3826d52962f9",
+      "name": "Error response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success": {
+      "main": [
+        [
+          {
+            "node": "Success response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2b9e329e-b854-4d0a-a86f-a99c6498dd0f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "440275e7d5f0563ac222ec0b5a178a6552b759f0bb861a4fc79aff4b0e9b23af"
+  },
+  "id": "aeVOg4E0KHFbkUaq",
+  "tags": []
+}
